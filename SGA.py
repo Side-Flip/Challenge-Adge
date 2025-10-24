@@ -1,4 +1,5 @@
 import math
+import random
 from utils import fitness
 
 # Operadores geneticos
@@ -59,7 +60,7 @@ def supervivencia_seleccion(poblacion, fitnessnes, offspring, fitness_offspring,
     """Combina la población actual con la descendencia y selecciona los mejores."""
     total = poblacion + offspring
     total_fitness = fitnessnes + fitness_offspring
-    orden = sorted(range(len(total)), key=lambda i: total_fitness[i], reserve=True)
+    orden = sorted(range(len(total)), key=lambda i: total_fitness[i], reverse=True)
     return [total[i] for i in orden[:poblacion_size]]
 
 # =========================
