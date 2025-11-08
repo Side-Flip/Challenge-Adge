@@ -1,6 +1,6 @@
 import math
 import random
-from utils import fitness
+from epga.utils.ga_utils import fitness
 
 # Operadores geneticos
 
