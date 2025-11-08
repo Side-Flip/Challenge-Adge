@@ -4,7 +4,7 @@ from utils.ga_utils import (
     torneo, escx, inversion_mutation, supervivencia_seleccion
 )
 
-from utils.hdfs_utils import read_population, write_population
+from utils.hdfs_utils import read_population, write_population, read_cities
 
 def mapper(island_id, hdfs_path, config):
     """
@@ -14,9 +14,12 @@ def mapper(island_id, hdfs_path, config):
     num_ciudades = config['num_ciudades']
     elite_size = config['elite_size']
     migration_period = config['migration_period']
-    puntos = config['points']
+    archivo_puntos = config['hdfs://user/hadoop/challenge_adge/data/cities.csv']
+
+    puntos = read_cities(archivo_puntos)
 
     poblacion = read_population(hdfs_path, island_id)
+    
     if not poblacion:
         poblacion = inicializacion(poblacion_size, num_ciudades)
     else:

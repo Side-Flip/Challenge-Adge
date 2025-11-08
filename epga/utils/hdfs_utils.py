@@ -1,5 +1,27 @@
 import json
 import os
+import subprocess
+import sys
+
+def read_cities(hdfs_path):
+    """ Leer un archivo de HDFS y convertirlo en una lista de coordenadas (x,y)."""
+    try:
+        result = subprocess.run(["hdfs", "dfs", "-cat", hdfs_path], capture_output=True, text=True, check=True)
+        lines = result.stdout.strip().split("\n")
+
+        puntos = []
+        for line in lines:
+            if not line.strip():
+                continue
+            parts = line.split(",")
+            if len(parts) >= 3:
+                _, x_str, y_str = parts[:3]
+                puntos.append((float(x_str), float(y_str)))
+        
+        return puntos
+    except subprocess.CalledProcessError as e:
+        print(f"Error reading from HDFS: {e}", file=sys.stderr)
+        sys.exit(1)
 
 def read_population(hdfs_path, island_id):
     """Lee la poblacion desde HDFS """
