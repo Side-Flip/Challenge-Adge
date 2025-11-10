@@ -1,11 +1,13 @@
 from SGA import SGA
 import random
+from epga.utils.ga_utils import carga_ciudades
 
 if __name__ == "__main__":
-    #Por ahora generar ciudades aleatoriamente pero en el futuro leer desde un archivo
-    num_ciudades = 20
-    ciudades = [(random.uniform(0, 100), random.uniform(0, 100)) for _ in range(num_ciudades)]
 
+    archivo = "xqf131.csv"
+
+    ciudades = carga_ciudades(archivo)
+    
     print("Ejecutando SGA secuencial")
     mejor_ruta, mejor_dist = SGA(
         ciudades, poblacion_size=200, generaciones=1000, elite_size=10, mutation_rate=0.05

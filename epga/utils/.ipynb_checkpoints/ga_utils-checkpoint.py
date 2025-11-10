@@ -1,10 +1,12 @@
 import random
 import math
+import subprocess
+import pandas as pd
+from io import StringIO
 
 def distancia(p1, p2):
     """Calcula la distancia euclidiana entre dos puntos."""
     return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
-
 
 def distancia_total(ruta, puntos):
     """Calcula la distancia total de una ruta dada una lista de puntos."""
@@ -77,3 +79,18 @@ def supervivencia_seleccion(poblacion, fitnessnes, offspring, fitness_offspring,
     total_fitness = fitnessnes + fitness_offspring
     orden = sorted(range(len(total)), key=lambda i: total_fitness[i], reverse=True)
     return [total[i] for i in orden[:poblacion_size]]
+
+def carga_ciudades(archivo):
+    resultado = subprocess.run(
+        ["hdfs", "dfs", "-cat", f"challenge_adge/datasets/{archivo}"],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    contenido = resultado.stdout
+
+    df = pd.read_csv(StringIO(contenido))
+    
+    ciudades = list(zip(df['x'], df['y']))
+    
+    return ciudades
