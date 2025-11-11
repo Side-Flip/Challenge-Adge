@@ -1,0 +1,28 @@
+{
+  "experiments": [
+    {
+      "population_size": 500,
+      "elite_size": 5,
+      "migration_period": 3000,
+      "cities_path": "challenge_adge/datasets/xqf131.csv"
+    },
+    {
+      "population_size": 1000,
+      "elite_size": 10,
+      "migration_period": 3000,
+      "cities_path": "challenge_adge/datasets/xqf131.csv"
+    },
+    {
+      "population_size": 2000,
+      "elite_size": 10,
+      "migration_period": 3000,
+      "cities_path": "challenge_adge/datasets/xqf131.csv"
+    },
+    {
+      "population_size": 5000,
+      "elite_size": 15,
+      "migration_period": 3000,
+      "cities_path": "challenge_adge/datasets/xqf131.csv"
+    }
+  ]
+}
