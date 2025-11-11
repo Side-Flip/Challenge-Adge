@@ -1,49 +1,27 @@
-#!/home/hadoop/cluster_env/bin/python3
-import sys, json
+import sys
+import json
 from collections import defaultdict
-from utils.reducer_utils import reducer
-import time
+from ga_utils import fitness, elitismo
+from hdfs_utils import write_elite, read_cities
 
-if __name__ == "__main__":
+def reducer(island_id, individuals, config, hdfs_path='.'):
     try:
-        start_time = time.time()
-        config = json.load(open("config.json"))
-        all_individuals = defaultdict(list)
+        cities_path = config['cities_path']
+        print(f"[DEBUG] Leyendo ciudades desde {cities_path}", file=sys.stderr)
+        puntos = read_cities(cities_path)
+        elite_size = config['elite_size']
 
-        for line_num, line in enumerate(sys.stdin, 1):
-            line = line.strip()
-            if not line:
-                continue
-
-            parts = line.split("\t")
-            if len(parts) != 2:
-                print(f"[WARN] Línea mal formada {line_num}: {line}", file=sys.stderr)
-                continue
-
-            island_id, individual_str = parts
-
-            try:
-                individual = json.loads(individual_str)
-            except json.JSONDecodeError as e:
-                print(f"[ERROR] JSON inválido {line_num}: {e} | {individual_str[:50]}", file=sys.stderr)
-                continue
-
-            all_individuals[island_id].append(individual)
-
-        # Procesar cada isla
-        for island_id in sorted(all_individuals.keys()):
-            individuals = all_individuals[island_id]
-            print(f"[INFO] Reducer: isla {island_id} → {len(individuals)} individuos", file=sys.stderr)
-            reducer(island_id, individuals, config, hdfs_path='.')
-
-        end_time = time.time()
-
-        # Calcular el tiempo de ejecución y mostrarlo
-        exc_time = end_time - start_time
-        print(f"Tiempo de ejecución de la fase Reducer: {exc_time} segundos")
-
+        print(f"[DEBUG] Evaluando fitness de {len(individuals)} individuos", file=sys.stderr)
+        fitnessnes = [fitness(ind, puntos) for ind in individuals]
+        
+        elite = elitismo(individuals, fitnessnes, elite_size)
+        
+        print(f"[DEBUG] Escribiendo elite de isla {island_id} en HDFS", file=sys.stderr)
+        write_elite(island_id, elite, hdfs_path)
+        
+        for ind in elite:
+            print(f"{island_id}\t{ind}")
+    
     except Exception as e:
-        print(f"[FATAL Reducer] {type(e).__name__}: {str(e)}", file=sys.stderr)
-        import traceback
-        traceback.print_exc(file=sys.stderr)
+        print(f"[ERROR] Error en el reducer para isla {island_id}: {str(e)}", file=sys.stderr)
         sys.exit(1)

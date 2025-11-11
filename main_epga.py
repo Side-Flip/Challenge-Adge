@@ -2,8 +2,6 @@ import json
 import subprocess
 import time
 import csv
-from SGA import SGA
-from epga.utils.carga_ciudades import carga_ciudades
 
 
 def ejecutar_hadoop_streaming(config, poblacion_size):
@@ -18,7 +16,7 @@ def ejecutar_hadoop_streaming(config, poblacion_size):
     hadoop_command = [
         "hadoop", "jar", "/home/hadoop/hadoop/share/hadoop/tools/lib/hadoop-streaming-3.4.1.jar",
         "-input", "/Challenge_adge/epga/islands.txt",
-        "-output", f"/Challenge_adge/epga/output_{poblacion_size}",
+        "-output", f"/Challenge_adge/epga/output_xit1083_{poblacion_size}",
         "-mapper", "python3 mapper.py",
         "-reducer", "python3 reducer.py",
         "-file", "/home/hadoop/Challenge-Adge/epga/mapper.py",
@@ -49,52 +47,11 @@ def ejecutar_hadoop_streaming(config, poblacion_size):
     return elapsed_time  # Retornamos el tiempo de ejecución de EPGA
 
 
-def ejecutar_sga(config, poblacion_size):
-    # Actualiza el tamaño de la población en el archivo de configuración
-    config['population_size'] = poblacion_size
-
-    # Guarda el archivo de configuración modificado
-    with open("config.json", "w") as config_file:
-        json.dump(config, config_file, indent=4)
-
-    # Cargar el archivo de ciudades para SGA
-    ciudades = carga_ciudades(config['cities_path'])
-    
-    # Leer la configuración para el resto de parámetros
-    generaciones = config['migration_period']  # En el paper es 3000 generaciones
-    elite_size = config['elite_size']  # Tamaño de la élite
-    mutation_rate = config['mutation_rate']  # Se toma desde config.json
-
-    # Ejecutar el algoritmo SGA secuencial y medir el tiempo de ejecución
-    start_time = time.time()
-    print(f"Ejecutando SGA secuencial con población de {poblacion_size}")
-    
-    mejor_ruta, mejor_dist = SGA(config, ciudades)
-    
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-
-    # Convertir el tiempo a minutos y segundos
-    elapsed_time_minutes = elapsed_time / 60  # Tiempo en minutos
-
-    # Generar nombre del archivo de salida
-    output_filename = f"output_sga_{poblacion_size}.txt"
-    
-    # Guardar los resultados de SGA en un archivo
-    with open(output_filename, "w") as file:
-        file.write(f"Mejor ruta: {mejor_ruta}\n")
-        file.write(f"Mejor distancia: {mejor_dist}\n")
-        file.write(f"Tiempo de ejecución: {elapsed_time_minutes:.2f} minutos\n")
-
-    print(f"Tiempo de ejecución de SGA para población {poblacion_size}: {elapsed_time_minutes:.2f} minutos")
-    return elapsed_time_minutes  # Retornamos el tiempo de ejecución de SGA en minutos
-
-
 def guardar_resultados_csv(resultados):
     # Guardar todos los resultados en un archivo CSV
-    with open("resultados_completos.csv", "w", newline="") as csvfile:
+    with open("resultados_epga.csv", "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["Población", "Tiempo SGA (min)", "Tiempo EPGA (s)", "Speedup"])
+        writer.writerow(["Población", "Tiempo EPGA (s)"])
         for resultado in resultados:
             writer.writerow(resultado)  # Escribir cada fila de resultados
 
@@ -109,27 +66,17 @@ if __name__ == "__main__":
 
     resultados = []  # Lista para almacenar los resultados
 
-    # Ejecutar SGA y EPGA para cada tamaño de población
+    # Ejecutar EPGA para cada tamaño de población
     for tamaño in tamaños_poblacion:
-         # Ejecutar EPGA con Hadoop Streaming
+        # Ejecutar EPGA con Hadoop Streaming
         tiempo_epga = ejecutar_hadoop_streaming(config, tamaño)
 
-         # Ejecutar SGA
-        tiempo_sga = ejecutar_sga(config, tamaño)
-
-        # Mostrar los tiempos de ejecución de EPGA y SGA por consola
+        # Mostrar el tiempo de ejecución de EPGA por consola
         print(f"Tiempo de ejecución de EPGA para población {tamaño}: {tiempo_epga:.2f} segundos")
-        print(f"Tiempo de ejecución de SGA para población {tamaño}: {tiempo_sga:.2f} minutos")
-
-        # Calcular el speedup
-        if tiempo_epga > 0:  # Evitar dividir por 0
-            speedup = tiempo_sga / tiempo_epga
-        else:
-            speedup = 0  # En caso de que el tiempo de EPGA sea 0 (lo cual no debería suceder)
 
         # Guardar los resultados de este experimento
-        resultados.append([tamaño, tiempo_sga, tiempo_epga, speedup])
+        resultados.append([tamaño, tiempo_epga])
 
     # Guardar todos los resultados en un archivo CSV
     guardar_resultados_csv(resultados)
-    print("Resultados guardados en 'resultados_completos.csv'")
+    print("Resultados guardados en 'resultados_epga.csv'")

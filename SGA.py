@@ -1,5 +1,5 @@
-import math
 import random
+import concurrent.futures
 from epga.utils.ga_utils import fitness
 
 # Operadores geneticos
@@ -44,7 +44,7 @@ def escx(p1, p2):
             break
     return child
 
-def inversion_mutation(individuo, mutation_rate=0.1):
+def inversion_mutation(individuo, mutation_rate=0.5):
     """Aplica mutación por inversión a un individuo."""
     if random.random() < mutation_rate:
         i, j = sorted(random.sample(range(len(individuo)), 2))
@@ -60,34 +60,61 @@ def supervivencia_seleccion(poblacion, fitnessnes, offspring, fitness_offspring,
     """Combina la población actual con la descendencia y selecciona los mejores."""
     total = poblacion + offspring
     total_fitness = fitnessnes + fitness_offspring
-    orden = sorted(range(len(total)), key=lambda i: total_fitness[i], reverse=True)
-    return [total[i] for i in orden[:poblacion_size]]
+    # Usar heap para obtener los mejores individuos
+    mejores_individuos = sorted(zip(total_fitness, total), key=lambda x: x[0], reverse=True)[:poblacion_size]
+    return [ind for _, ind in mejores_individuos]
 
 # =========================
-# Algoritmo Genético Simple
+# Algoritmo Genético Simple (SGA)
 # =========================
 
-def SGA(ciudades, poblacion_size=100, generaciones=500, elite_size=5, mutation_rate=0.1):
+def evaluar_fitness_individuos(poblacion, ciudades):
+    """Evaluación de fitness de los individuos en paralelo."""
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        fitnessnes = list(executor.map(lambda ind: fitness(ind, ciudades), poblacion))
+    return fitnessnes
+
+def SGA(config, ciudades):
+    """
+    Algoritmo Genético Simple (SGA) utilizando parámetros del archivo config.
+    """
+    poblacion_size = config['population_size']
+    generaciones = config['migration_period']  # Usado como número de generaciones en el paper
+    elite_size = config['elite_size']
+    mutation_rate = config['mutation_rate']  # Tomando la tasa de mutación desde config.json
+    
+    # Inicializar la población
     poblacion = inicializacion(poblacion_size, len(ciudades))
 
     for gen in range(generaciones):
-        fitnessnes = [fitness(ind, ciudades) for ind in poblacion]
+        # Evaluar fitness de los individuos
+        fitnessnes = evaluar_fitness_individuos(poblacion, ciudades)
+        
+        # Elitismo: seleccionar los mejores individuos
         elite = elitismo(poblacion, fitnessnes, elite_size)
-        poblacion = [ind for ind in poblacion if ind not in elite]
+        poblacion = [ind for ind in poblacion if ind not in elite]  # Eliminar los mejores de la población para no duplicarlos
 
+        # Generar descendencia a partir de la población
         offspring = []
         while len(offspring) < poblacion_size - elite_size:
             padre1 = torneo(poblacion, fitnessnes)
             padre2 = torneo(poblacion, fitnessnes)
-            hijo = escx(padre1, padre2)
+            hijo = escx(padre1, padre2)  # Cruce entre los padres
             offspring.append(hijo)
 
+        # Mutación
         offspring = [inversion_mutation(ind, mutation_rate) for ind in offspring]
-        fitness_offspring = [fitness(ind, ciudades) for ind in offspring]
 
+        # Evaluar fitness de la descendencia
+        fitness_offspring = evaluar_fitness_individuos(offspring, ciudades)
+
+        # Selección de supervivencia: combinar población y descendencia, seleccionar los mejores
         poblacion = supervivencia_seleccion(poblacion, fitnessnes, offspring, fitness_offspring, poblacion_size)
+        
+        # Añadir los mejores individuos de la élite
         poblacion += elite
 
-    fitnessnes = [fitness(ind, ciudades) for ind in poblacion]
+    # Evaluar fitness final de la población y seleccionar el mejor individuo
+    fitnessnes = evaluar_fitness_individuos(poblacion, ciudades)
     mejor_indice = max(range(len(fitnessnes)), key=lambda i: fitnessnes[i])
-    return poblacion[mejor_indice], 1 / fitnessnes[mejor_indice]
+    return poblacion[mejor_indice], 1 / fitnessnes[mejor_indice]  # Retornar el mejor individuo y su fitness invertido (distancia)

@@ -1,0 +1,7 @@
+{
+    "population_size": 500,
+    "elite_size": 1,
+    "migration_period": 3000,
+    "cities_path": "challenge_adge/datasets/xit1083.csv",
+    "mutation_rate": 0.5
+}
