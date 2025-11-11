@@ -1,6 +1,6 @@
 {
     "population_size": 100,
     "elite_size": 5,
-    "migration_period": 5,
+    "migration_period": 3000, 
     "cities_path":  "challenge_adge/datasets/xqf131.csv"
 }
