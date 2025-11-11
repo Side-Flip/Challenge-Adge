@@ -1,10 +1,12 @@
 #!/home/hadoop/cluster_env/bin/python3
 import sys, json
 from collections import defaultdict
-from reducer_utils import reducer
+from utils.reducer_utils import reducer
+import time
 
 if __name__ == "__main__":
     try:
+        start_time = time.time()
         config = json.load(open("config.json"))
         all_individuals = defaultdict(list)
 
@@ -33,6 +35,12 @@ if __name__ == "__main__":
             individuals = all_individuals[island_id]
             print(f"[INFO] Reducer: isla {island_id} → {len(individuals)} individuos", file=sys.stderr)
             reducer(island_id, individuals, config, hdfs_path='.')
+
+        end_time = time.time()
+
+        # Calcular el tiempo de ejecución y mostrarlo
+        exc_time = end_time - start_time
+        print(f"Tiempo de ejecución de la fase Reducer: {exc_time} segundos")
 
     except Exception as e:
         print(f"[FATAL Reducer] {type(e).__name__}: {str(e)}", file=sys.stderr)
